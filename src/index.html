@@ -9,6 +9,17 @@
     
     <script src="/node_modules/traceur/bin/traceur-runtime.js"></script>
     <script src="/node_modules/systemjs/dist/system.js"></script>
+    <script>
+      System.config({
+        packages: {
+          '': {
+            main: 'app.js',
+            format: 'cjs',
+            defaultExtension: 'js'
+          }
+        }
+      });
+    </script>
     <script src="/node_modules/angular2/bundles/angular2.dev.js"></script>
     <script>
       System.import('/app.js');

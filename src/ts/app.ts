@@ -1,9 +1,11 @@
 /// <reference path="../../typings/angular2/angular2.d.ts" />
 
-import {Component, View, bootstrap, NgFor} from 'angular2/angular2';
+import {Injector, Component, View, bootstrap, NgFor} from 'angular2/angular2';
+import {FriendsService} from './friends';
 
 @Component({
-  selector: 'my-app'
+  selector: 'my-app',
+  bindings: [FriendsService]
 })
 @View({
   template: `
@@ -12,13 +14,11 @@ import {Component, View, bootstrap, NgFor} from 'angular2/angular2';
   directives: [NgFor]
 })
 // Component controller
-class MyAppComponent {
+export class MyAppComponent {
   names: string[];
   
-  constructor() {
-    this.names = [
-      'Alice', 'Bob', 'Charles'
-    ];
+  constructor(friendsService: FriendsService) {
+    this.names = friendsService.names;
   }
 }
 

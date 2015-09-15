@@ -65,7 +65,7 @@ gulp.task('dev-serve', function() {
   
   server.all('/*', function(req, res) {
     console.log('Sending index.html for url:', req.url);
-    res.sendFile('/index.html', { root: config.clientDir });
+    res.sendFile('/index.html', { root: config.src });
   });
   
   console.log('*** Serving CLIENT on port ' + port);
