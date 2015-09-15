@@ -4,10 +4,9 @@
     "module": "commonjs",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "newLine": "LF",
-    "outDir": "build"
+    "newLine": "LF"
   },
   "files": [
-    "src/ts/app.ts"
+    "src/scripts/app.ts"
   ]
 }

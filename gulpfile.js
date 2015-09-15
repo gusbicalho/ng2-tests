@@ -1,8 +1,10 @@
 var gulp = require('gulp');
 var args = require('yargs').argv;
 var config = require('./gulp.config')();
-var del = require('del');
 var $ = require('gulp-load-plugins')();
+var source = require('vinyl-source-stream');
+var watchify = require('watchify');
+var browserify = require('browserify');
 
 var tsProject = $.typescript.createProject('tsconfig.json');
 
@@ -21,69 +23,59 @@ gulp.task('tslint', function() {
         }));
 });
 
-gulp.task('tsc', function() {
+gulp.task('dev-watch-tslint', function() {
+  log('Watching source with TSLint');
+  function notice(path) {
+    return "TSLint: " + path;
+  }
   return gulp
-    .src(config.allts)
-    .pipe($.typescript(tsProject))
-    .js
-    .pipe(gulp.dest(config.jsDest))
+      .src(config.allts)
+      .pipe($.plumber())
+      .pipe($.watch(config.allts))
+      .pipe($.print(notice))
+      .pipe($.tslint())
+      .pipe($.tslint.report($.tslintStylish, {
+        emitError: false,
+        sort: true,
+        bell: true
+      }));
 });
 
-gulp.task('dev-tslint-watcher', function() {
-    var linted = {};
-    function checkLinted(vinylFile) {
-      return linted[vinylFile.path] || !(linted[vinylFile.path] = true);
-    }
-    function notice(path) {
-      return "TSLint: " + path;
-    }
-    return gulp
-        .src(config.allts)
-        .pipe($.plumber())
-        .pipe($.watch(config.allts))
-        .pipe($.if(true, $.print(notice)))
-        .pipe($.tslint())
-        .pipe($.tslint.report($.tslintStylish, {
-          emitError: false,
-          sort: true,
-          bell: true
-        }));
-});
+gulp.task('dev-watchify', function() {
+  log('Watching and building with watchify');
+  var bundler = watchify(browserify(config.tsMain, watchify.args));
+  bundler.plugin('tsify', config.tsconfig);
+  bundler.on('update', watchifyBundle); // on any dep update, runs the bundler
+  bundler.on('log', log); // output build logs to terminal
 
-gulp.task('dev-tsc-watcher', ['tsc'], function() {
-    gulp.watch([config.allts], ['tsc']);
+  return watchifyBundle();
+
+  function watchifyBundle() {
+    return bundler.bundle()
+      .on('error', $.util.log.bind($.util, 'Browserify Error'))
+      .pipe(source(config.jsBundle))
+      .pipe(gulp.dest(config.temp));
+  }
 });
 
 gulp.task('dev-serve', function() {
-  var express = require('express');
-  var server = express();
+  log('Serving src and temp');
   var port = args.port || config.devServerPort;
-  
-  server.use(express.static(config.jsDest));
-  server.use(express.static(config.src));
-  server.use('/node_modules/', express.static(config.servedModules));
-  
-  server.all('/*', function(req, res) {
-    console.log('Sending index.html for url:', req.url);
-    res.sendFile('/index.html', { root: config.src });
+  $.connect.server({
+    root: [config.temp, config.src],
+    fallback: config.index,
+    port: port,
+    livereload: true
   });
-  
-  console.log('*** Serving CLIENT on port ' + port);
-  
-  server.listen(port);
+  gulp.watch(config.watchReload, function() {
+    return gulp.src(config.watchReload, {read: false})
+            .pipe($.connect.reload());
+  })
 });
 
-gulp.task('dev', ['dev-tslint-watcher', 'dev-tsc-watcher', 'dev-serve']);
+gulp.task('dev', ['dev-watch-tslint', 'dev-watchify', 'dev-serve']);
 
 ///////////////////////////////////////
-
-function clean(path, done) {
-    log('Cleaning: ' + $.util.colors.blue(path));
-    del(path)
-      .then(
-        function(paths) { done(null, paths); },
-        function(err) { done(err); });
-}
 
 function log(msg) {
     if (typeof(msg) === 'object') {

@@ -1,14 +1,23 @@
 module.exports = function() {
   var tsconfig = require('./tsconfig.json');
+  var temp = '.temp/'
+  var src = 'src/';
   var config = {
-    src: 'src',
-    jsDest: tsconfig.compilerOptions.outDir,
+    temp: temp,
+    src: src,
     allts: [
-      'src/ts/**/*.ts'
+      src + '**/*.ts'
     ],
-    index: 'src/index.html',
+    tsMain: src + 'scripts/app.ts',
+    tsconfig: tsconfig,
+    jsBundle: 'bundle.js',
+    index: src + 'index.html',
     devServerPort: 7070,
-    servedModules: 'node_modules',
+    watchReload: [
+      src + '**/*',
+      temp + '**.*',
+      '!' + src + '**/*.ts',
+    ],
   };
 
   return config;
